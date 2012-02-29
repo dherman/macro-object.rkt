@@ -1,0 +1,62 @@
+_macro-object_
+_macro-object_
+
+This collection provides one file:
+
+ _macro-object_: macro elaboration time data
+
+The macro-object library allows for attaching elaboration-time values
+to syntax transformers. A macro-object is a structure with a field
+containing an elaboration-time value but that can also be used as a
+syntax transformer.
+
+======================================================================
+
+SPECIAL FORMS --------------------------------------------------------
+
+> (make-macro-object v tx) :: any (syntax -> syntax) -> macro-object
+
+Creates an elaboration-time structure containing two values: an
+arbitrary piece of data and a syntax transformer (macro). When a
+macro-object is bound to an identifier with `define-syntax', it can be
+used as an ordinary macro, in which case the associated syntax
+transformer is used, or its piece of data can be extracted via
+`macro-object-value'.
+
+> (macro-object? v) :: any -> boolean
+
+Tests a value to see if it is a macro-object.
+
+> (macro-object-value stx) :: syntax -> any
+
+Extracts the piece of data associated with an identifier via
+`make-macro-object'.
+
+> (macro-object-transformer stx) :: syntax -> (syntax -> syntax)
+
+Extracts the syntax transformer associated with an identifier via
+`make-macro-object'.
+
+EXAMPLES -------------------------------------------------------------
+
+#lang racket
+(require (for-syntax (planet dherman/macro-object:2)))
+
+(define-syntax foo
+  (make-macro-object
+   'expansion-time-value
+   (syntax-rules ()
+     [(_)
+      'hello-world])))
+
+(define-syntax bar
+  (lambda (stx)
+    (syntax-case stx ()
+      [(_)
+       (let ([val (macro-object-value #'foo)])
+         #`(quote #,val))])))
+
+(define x (foo))    ; ==> 'hello-world
+(define y (bar))    ; ==> 'expansion-time-value
+
+(provide x y)
